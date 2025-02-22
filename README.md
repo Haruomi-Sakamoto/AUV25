@@ -1,4 +1,4 @@
-# AUV25 ROS Project
+# AUV25 ROS2 Project
 
 ## 概要
 AUV'25 ROS2 プロジェクト
