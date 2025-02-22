@@ -1,7 +1,7 @@
-# AUV25 ROS2 Project
+# AUV25
 
-## 概要
-AUV'25 ROS2 プロジェクト
+## about
+AUV'25 ROS2 Project
 
 ### 1. build&launch
 
@@ -10,7 +10,7 @@ colcon build<br>
 source install/setup.bash<br>
 ros2 launch auv25_ros auv25_launch.py<br>
 
-### 2. topic確認
+### 2. check topic
 
 ros2 topic echo /auv25/sensor_data<br>
 
