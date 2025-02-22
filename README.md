@@ -13,10 +13,3 @@ ros2 launch auv25_ros auv25_launch.py<br>
 ### 2. check topic
 
 ros2 topic echo /auv25/sensor_data<br>
-
-### 3. git push
-
-git add .<br>
-git commit -m "変更内容"<br>
-git push origin main<br>
-<br>
