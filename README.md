@@ -5,18 +5,18 @@ AUV'25 ROS2 プロジェクト
 
 ### 1. build&launch
 
-cd ~/colon_ws
-colcon build
-source install/setup.bash
-ros2 launch auv25_ros auv25_launch.py
+cd ~/colon_ws<br>
+colcon build<br>
+source install/setup.bash<br>
+ros2 launch auv25_ros auv25_launch.py<br>
 
 ### 2. topic確認
 
-ros2 topic echo /auv25/sensor_data
+ros2 topic echo /auv25/sensor_data<br>
 
 ### 3. git push
 
-git add .
-git commit -m "変更内容"
-git push origin main
-
+git add .<br>
+git commit -m "変更内容"<br>
+git push origin main<br>
+<br>
