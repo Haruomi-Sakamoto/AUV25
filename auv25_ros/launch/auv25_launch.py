@@ -7,7 +7,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package=package_name,
-            executable='pingsonner',  # setup.py でエントリポイント登録
+            executable='pingsonner',
             name='pingsonner_node',
             namespace='auv25',
             output='screen',
