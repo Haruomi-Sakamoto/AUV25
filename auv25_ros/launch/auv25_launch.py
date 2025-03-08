@@ -13,9 +13,9 @@ def generate_launch_description():
         executable='pingsonner',
         name='pingsonner_node',
         namespace='auv25',
-        output='screen',
+        output='log',
         parameters=[{'robot_namespace': 'auv25'}],
-        remappings=[('/sensor_data', '/auv25/sensor_data')],
+        remappings=[('/sonner_data', '/auv25/sonner_data')],
     )
 
     # GPIO制御ノード
@@ -24,7 +24,7 @@ def generate_launch_description():
         executable='gpiocontrol',
         name='gpiocontrol_node',
         namespace='auv25',
-        output='screen',
+        output='log',
     )
 
     return LaunchDescription([

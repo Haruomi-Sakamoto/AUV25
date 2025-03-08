@@ -7,20 +7,22 @@ class GPIOControlNode(Node):
     def __init__(self):
         super().__init__('gpiocontrol_node')
 
-        # GPIO 4 output
+        # GPIO 5 output
         self.gpio_pin = 4
         try:
-            self.chip = gpiod.Chip('gpiochip0', gpiod.Chip.OPEN_BY_NAME)
+            self.chip = gpiod.Chip('gpiochip4', gpiod.Chip.OPEN_BY_NAME)
             self.line = self.chip.get_line(self.gpio_pin)
-            self.line.request(consumer="sensor_control", type=gpiod.LINE_REQ_DIR_OUT)
+            self.line.request(consumer="auv25", type=gpiod.LINE_REQ_DIR_OUT, default_vals=[0])
+            self.get_logger().info(f"GPIO {self.gpio_pin} initialized to LOW")
+
         except Exception as e:
             self.get_logger().error(f"GPIO setup failed: {e}")
             raise
 
-        # sensor_data subscription
+        # sonner_data subscription
         self.subscription = self.create_subscription(
             Float32,
-            '/auv25/sensor_data',
+            '/auv25/sonner_data',
             self.sensor_callback,
             10
         )
@@ -29,16 +31,21 @@ class GPIOControlNode(Node):
         try:
             if msg.data >= 10:
                 self.line.set_value(1)
-                self.get_logger().info(f"GPIO {self.gpio_pin} HIGH (sensor_data: {msg.data})")
             else:
                 self.line.set_value(0)
-                self.get_logger().info(f"GPIO {self.gpio_pin} LOW (sensor_data: {msg.data})")
+
+            actual_value = self.line.get_value()
+            state_str = "HIGH" if actual_value == 1 else "LOW"
+            self.get_logger().info(f"GPIO {self.gpio_pin} {state_str} (sonner_data: {msg.data}, actual: {actual_value})")
+
         except Exception as e:
             self.get_logger().error(f"Error in sensor callback: {e}")
 
     def destroy_node(self):
         try:
+            self.line.set_value(0)
             self.line.release()
+            self.get_logger().info(f"GPIO {self.gpio_pin} released and set to LOW")
         except Exception as e:
             self.get_logger().error(f"Error releasing GPIO: {e}")
         super().destroy_node()

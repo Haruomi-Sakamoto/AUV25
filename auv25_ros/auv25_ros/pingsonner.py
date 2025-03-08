@@ -4,22 +4,25 @@ from std_msgs.msg import Float32
 
 from brping import Ping1D
 
+import random
+#for gpio test
+
 class PingsonnerNode(Node):
     def __init__(self):
         super().__init__('pingsonner_node')
         #self.myping = Ping1D()
         #self.myping.connect_serial("/dev/ttyUSB0", 115200)
-        self.publisher_ = self.create_publisher(Float32, 'sensor_data', 10)
+        self.publisher_ = self.create_publisher(Float32, 'sonner_data', 10)
         self.timer = self.create_timer(1.0, self.timer_callback)
 
     def timer_callback(self):
     
         #add get data
-        sensor_data = 9.0
+        sonner_data = float(random.randint(0, 20)) 
         #test data
 
-        self.publisher_.publish(Float32(data=sensor_data))
-        self.get_logger().info(f'Sensor data: {sensor_data}')
+        self.publisher_.publish(Float32(data=sonner_data))
+        self.get_logger().info(f'Sonner data: {sonner_data}')
         
     def Sensing(self):
         pass
