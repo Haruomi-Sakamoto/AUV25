@@ -22,6 +22,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pingsonner = auv25_ros.pingsonner:main',
+            'gpiocontrol = auv25_ros.gpiocontrol:main',
         ],
     },
 )

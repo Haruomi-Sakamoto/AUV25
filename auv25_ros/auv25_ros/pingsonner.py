@@ -13,8 +13,10 @@ class PingsonnerNode(Node):
         self.timer = self.create_timer(1.0, self.timer_callback)
 
     def timer_callback(self):
-        # センサーからデータを取得する処理をここに追加
-        sensor_data = 10.5  # 仮のデータ
+    
+        #add get data
+        sensor_data = 9.0
+        #test data
 
         self.publisher_.publish(Float32(data=sensor_data))
         self.get_logger().info(f'Sensor data: {sensor_data}')
