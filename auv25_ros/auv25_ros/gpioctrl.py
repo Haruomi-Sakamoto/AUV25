@@ -5,7 +5,7 @@ import gpiod
 
 class GPIOControlNode(Node):
     def __init__(self):
-        super().__init__('gpiocontrol_node')
+        super().__init__('gpioctrl_node')
 
         # GPIO 5 output
         self.gpio_pin = 4

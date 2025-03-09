@@ -19,16 +19,25 @@ def generate_launch_description():
     )
 
     # GPIO制御ノード
-    gpiocontrol = Node(
+    gpioctrl = Node(
         package=package_name,
-        executable='gpiocontrol',
-        name='gpiocontrol_node',
+        executable='gpioctrl',
+        name='gpioctrl_node',
+        namespace='auv25',
+        output='log',
+    )
+    
+    pwmgen = Node(
+        package=package_name,
+        executable='pwmgen',
+        name='pwmgen_node',
         namespace='auv25',
         output='log',
     )
 
     return LaunchDescription([
         pingsonner,
-        gpiocontrol,
+        gpioctrl,
+        pwmgen,
     ])
 
