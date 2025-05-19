@@ -7,7 +7,6 @@ from launch_ros.actions import Node
 def generate_launch_description():
     package_name = "auv25_ros"
 
-    # pingsonner ノード
     pingsonner = Node(
         package=package_name,
         executable='pingsonner',
@@ -18,7 +17,6 @@ def generate_launch_description():
         remappings=[('/sonner_data', '/auv25/sonner_data')],
     )
 
-    # GPIO制御ノード
     gpioctrl = Node(
         package=package_name,
         executable='gpioctrl',
@@ -35,9 +33,18 @@ def generate_launch_description():
         output='log',
     )
 
+    mpu6050 = Node(
+        package=package_name,
+        executable='mpu6050',
+        name='mpu6050_node',
+        namespace='auv25',
+        output='screen',
+    )
+
     return LaunchDescription([
         pingsonner,
         gpioctrl,
         pwmgen,
+        mpu6050,
     ])
 
