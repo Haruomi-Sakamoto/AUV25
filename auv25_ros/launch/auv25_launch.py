@@ -40,21 +40,12 @@ def generate_launch_description():
         namespace='auv25',
         output='screen',
     )
-
-    imuviewer = Node(
-    package=package_name,
-    executable='imuviewer',
-    name='imuviewer_node',
-    namespace='auv25',
-    output='screen',
-)
-
+    
 
     return LaunchDescription([
         #pingsonner,
         #gpioctrl,
         #pwmgen,
         mpu6050,
-        #imuviewer,
     ])
 

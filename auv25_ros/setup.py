@@ -25,7 +25,6 @@ setup(
             'gpioctrl = auv25_ros.gpioctrl:main',
             'pwmgen = auv25_ros.pwmgen:main',
             'mpu6050 = auv25_ros.mpu6050:main',
-            'imuviewer = auv25_ros.imuviewer:main',
         ],
     },
 )
