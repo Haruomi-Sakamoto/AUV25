@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 from glob import glob
 
@@ -7,7 +7,7 @@ package_name = 'auv25_ros'
 setup(
     name=package_name,
     version='0.0.1',
-    packages=[package_name],
+    packages=find_packages(exclude=['test']),
     data_files=[
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.py')),
@@ -24,7 +24,8 @@ setup(
             'pingsonner = auv25_ros.pingsonner:main',
             'gpioctrl = auv25_ros.gpioctrl:main',
             'pwmgen = auv25_ros.pwmgen:main',
+            'mpu6050 = auv25_ros.mpu6050:main',
+            'imuviewer = auv25_ros.imuviewer:main',
         ],
     },
 )
-
