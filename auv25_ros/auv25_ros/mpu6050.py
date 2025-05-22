@@ -10,12 +10,11 @@ class MPU6050Node(Node):
         super().__init__('mpu6050_node')
 
         self.publisher_ = self.create_publisher(Imu, 'imu/data_raw', 10)
-        self.timer = self.create_timer(0.1, self.timer_callback)  # 10Hz
+        self.timer = self.create_timer(0.1, self.timer_callback)
 
-        # I2C設定
         self.bus = smbus.SMBus(1)
         self.device_address = 0x68
-        self.bus.write_byte_data(self.device_address, 0x6B, 0)  # スリープ解除
+        self.bus.write_byte_data(self.device_address, 0x6B, 0)
 
         self.get_logger().info('MPU6050 initialized')
 
@@ -23,7 +22,7 @@ class MPU6050Node(Node):
         high = self.bus.read_byte_data(self.device_address, addr)
         low = self.bus.read_byte_data(self.device_address, addr+1)
         value = (high << 8) | low
-        if value > 32767:  # ←修正: 32768 → 32767
+        if value > 32767:
             value -= 65536
         return value
 
@@ -32,12 +31,10 @@ class MPU6050Node(Node):
         imu_msg.header.stamp = self.get_clock().now().to_msg()
         imu_msg.header.frame_id = "imu_link"
 
-        # 加速度 [m/s^2]
         accel_x = self.read_raw_data(0x3B) / 16384.0 * 9.80665
         accel_y = self.read_raw_data(0x3D) / 16384.0 * 9.80665
         accel_z = self.read_raw_data(0x3F) / 16384.0 * 9.80665
 
-        # 角速度 [rad/s]
         gyro_x = math.radians(self.read_raw_data(0x43) / 131.0)
         gyro_y = math.radians(self.read_raw_data(0x45) / 131.0)
         gyro_z = math.radians(self.read_raw_data(0x47) / 131.0)
@@ -52,7 +49,7 @@ class MPU6050Node(Node):
         imu_msg.angular_velocity.z = gyro_z
         imu_msg.angular_velocity_covariance = [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
-        imu_msg.orientation_covariance[0] = -1.0  # orientation無効
+        imu_msg.orientation_covariance[0] = -1.0
 
         self.publisher_.publish(imu_msg)
 
