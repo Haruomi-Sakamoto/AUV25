@@ -10,11 +10,16 @@ colcon build<br>
 source install/setup.bash<br>
 ros2 launch auv25_ros auv25_launch.py<br>
 
+### 2. remote
+
+sudo systemctl start ssh
+sudo systemctl enable ssh
+
 cd ~/colon_ws<br>
 colcon build<br>
 source install/setup.bash<br>
 ros2 launch auv25_ros auv25_remotelaunch.py<br>
 
-### 2. check topic
+### 3. check topic
 
 ros2 topic echo /auv25/sensor_data<br>
