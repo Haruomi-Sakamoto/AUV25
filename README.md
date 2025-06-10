@@ -12,8 +12,8 @@ ros2 launch auv25_ros auv25_launch.py<br>
 
 ### 2. remote
 
-sudo systemctl start ssh
-sudo systemctl enable ssh
+sudo systemctl start ssh<br>
+sudo systemctl enable ssh<br>
 
 cd ~/colon_ws<br>
 colcon build<br>
