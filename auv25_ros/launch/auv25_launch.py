@@ -40,12 +40,21 @@ def generate_launch_description():
         namespace='auv25',
         output='screen',
     )
+
+    j2tw = Node(
+        package=package_name,
+        executable='j2tw',
+        name='j2tw_node',
+        namespace='auv25',
+        output='screen',
+    )
     
 
     return LaunchDescription([
         #pingsonner,
         #gpioctrl,
         #pwmgen,
-        mpu6050,
+        #mpu6050,
+        j2tw,
     ])
 
