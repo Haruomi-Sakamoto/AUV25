@@ -7,7 +7,10 @@ def generate_launch_description():
     gamepad = Node(
         package='joy',
         executable='joy_node',
+        parameters=[{'robot_namespace': 'auv25'}],
+        remappings=[('/joy', '/remote_pc/joy')],
     )
+    
 
     j2tw = Node(
         package=package_name,
