@@ -54,7 +54,7 @@ def generate_launch_description():
         #pingsonner,
         #gpioctrl,
         #pwmgen,
-        #mpu6050,
+        mpu6050,
         j2tw,
     ])
 

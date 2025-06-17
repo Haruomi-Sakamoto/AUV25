@@ -17,7 +17,13 @@ def generate_launch_description():
         output='screen',
     )
 
+    rqt = Node(
+            package='rqt_image_view',
+            executable='rqt_image_view',
+            )
+
     return LaunchDescription([
         gamepad,
-        j2tw,
+        #j2tw,
+        #rqt,
     ])

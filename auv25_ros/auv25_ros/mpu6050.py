@@ -12,21 +12,34 @@ class MPU6050Node(Node):
         self.publisher_ = self.create_publisher(Imu, 'imu/data_raw', 10)
         self.timer = self.create_timer(0.1, self.timer_callback)
 
-        self.bus = smbus.SMBus(1)
-        self.device_address = 0x68
-        self.bus.write_byte_data(self.device_address, 0x6B, 0)
-
-        self.get_logger().info('MPU6050 initialized')
+        try:
+            self.bus = smbus.SMBus(1)
+            self.device_address = 0x68
+            self.bus.write_byte_data(self.device_address, 0x6B, 0)   # Wake up
+            self.bus.write_byte_data(self.device_address, 0x1B, 0x00)  # Gyro config
+            self.bus.write_byte_data(self.device_address, 0x1C, 0x00)  # Accel config
+            self.i2c_available = True
+            self.get_logger().info('MPU6050 initialized successfully.')
+        except Exception as e:
+            self.i2c_available = False
+            self.get_logger().warn(f"MPU6050 not available (I2C error): {e}")
 
     def read_raw_data(self, addr):
-        high = self.bus.read_byte_data(self.device_address, addr)
-        low = self.bus.read_byte_data(self.device_address, addr+1)
-        value = (high << 8) | low
-        if value > 32767:
-            value -= 65536
-        return value
+        try:
+            high = self.bus.read_byte_data(self.device_address, addr)
+            low = self.bus.read_byte_data(self.device_address, addr + 1)
+            value = (high << 8) | low
+            if value > 32767:
+                value -= 65536
+            return value
+        except Exception as e:
+            self.get_logger().warn(f"I2C read failed at 0x{addr:02X}: {e}")
+            return 0
 
     def timer_callback(self):
+        if not self.i2c_available:
+            return
+
         imu_msg = Imu()
         imu_msg.header.stamp = self.get_clock().now().to_msg()
         imu_msg.header.frame_id = "imu_link"
@@ -49,7 +62,7 @@ class MPU6050Node(Node):
         imu_msg.angular_velocity.z = gyro_z
         imu_msg.angular_velocity_covariance = [0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01]
 
-        imu_msg.orientation_covariance[0] = -1.0
+        imu_msg.orientation_covariance = [-1.0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         self.publisher_.publish(imu_msg)
 
