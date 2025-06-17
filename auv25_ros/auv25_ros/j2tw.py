@@ -7,7 +7,7 @@ class JoyToTwistNode(Node):
     def __init__(self):
         super().__init__('j2tw_node')
 
-        self.joy_subscriber = self.create_subscription(Joy,'/joy',self.joy_callback,10)
+        self.joy_subscriber = self.create_subscription(Joy,'/remote_pc/joy',self.joy_callback,10)
         self.twist_publisher = self.create_publisher(Twist,'/cmd_vel',10)
 
     def joy_callback(self, joy_msg: Joy):
