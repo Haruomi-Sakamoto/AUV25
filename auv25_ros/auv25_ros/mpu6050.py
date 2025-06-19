@@ -6,7 +6,7 @@ import smbus2 as smbus
 import math
 import time
 
-from config.config import MPU6050Config
+from auv25_ros.config.config import MPU6050Config
 
 class MPU6050Node(Node):
     def __init__(self):
