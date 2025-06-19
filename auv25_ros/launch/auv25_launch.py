@@ -38,7 +38,7 @@ def generate_launch_description():
         executable='mpu6050',
         name='mpu6050_node',
         namespace='auv25',
-        output='screen',
+        output='log',
     )
 
     j2tw = Node(
@@ -46,7 +46,7 @@ def generate_launch_description():
         executable='j2tw',
         name='j2tw_node',
         namespace='auv25',
-        output='screen',
+        output='log',
     )
     
 
