@@ -28,7 +28,7 @@ class MPU6050Config:
         self.accel_xout_h = 0x3B
         self.gyro_xout_h = 0x43
 
-class AhrsConfig:
+class MadgwickConfig:
     def __init__(self):
         self.initial_orientation = [1.0, 0.0, 0.0, 0.0]
 

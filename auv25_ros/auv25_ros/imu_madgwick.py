@@ -5,9 +5,13 @@ from ahrs.filters import Madgwick
 import numpy as np
 from geometry_msgs.msg import Quaternion
 
+from auv25_ros.config import MadgwickConfig
+
 class ImuMadgwickNode(Node):
     def __init__(self):
         super().__init__('imu_madgwick_node')
+        self.config = MadgwickConfig()
+
         self.sub = self.create_subscription(Imu, 'imu/data_raw', self.callback, 10)
         self.pub = self.create_publisher(Imu, 'imu/data_orientation', 10)
 
