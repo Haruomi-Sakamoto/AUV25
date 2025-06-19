@@ -28,7 +28,7 @@ class ImuMadgwickNode(Node):
         dt = (current_time - self.last_time).nanoseconds * 1e-9
         self.last_time = current_time
 
-        acc_g = np.array([
+        acc = np.array([
             msg.linear_acceleration.x, 
             msg.linear_acceleration.y,
             msg.linear_acceleration.z
