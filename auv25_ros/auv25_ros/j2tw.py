@@ -3,7 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import Twist
 
-from config import TwistConfig
+from config.config import TwistConfig
 
 class JoyToTwistNode(Node):
     def __init__(self):
