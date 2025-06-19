@@ -25,6 +25,7 @@ setup(
             'gpioctrl = auv25_ros.gpioctrl:main',
             'pwmgen = auv25_ros.pwmgen:main',
             'mpu6050 = auv25_ros.mpu6050:main',
+            'imu_madgwick = auv25_ros.imu_madgwick:main',
             'j2tw = auv25_ros.j2tw:main',
         ],
     },

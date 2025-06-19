@@ -27,3 +27,10 @@ class MPU6050Config:
 
         self.accel_xout_h = 0x3B
         self.gyro_xout_h = 0x43
+
+class AhrsConfig:
+    def __init__(self):
+        self.initial_orientation = [1.0, 0.0, 0.0, 0.0]
+
+        # 重力加速度 [m/s^2]
+        self.gravity_value = 9.80665

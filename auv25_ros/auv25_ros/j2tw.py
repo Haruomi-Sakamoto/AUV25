@@ -41,12 +41,12 @@ class JoyToTwistNode(Node):
                 self.angular[i] = 0.0
         else:
             self.linear[0] = self.axes[4] * self.config.scale_linear if len(self.axes) > 4 else 0.0
-            self.linear[1] = self.axes[3] * self.config.scale_linear if len(self.axes) > 3 else 0.0
-            self.linear[2] = ((self.axes[2] - 1) / 2 - (self.axes[5] + 1) / 2) * self.config.scale_linear
+            self.linear[1] = -(self.axes[3]) * self.config.scale_linear if len(self.axes) > 3 else 0.0
+            self.linear[2] = ((self.axes[2] - 1) / 2 - (self.axes[5] + 1) / 2 + 1) * self.config.scale_linear
             self.angular[0] = self.config.angular[0]
             self.angular[1] = self.config.angular[1]
             self.angular[2] = -(self.axes[0]) * self.config.scale_angular if len(self.axes) > 0 else 0.0
-            
+
         twist = Twist()
         twist.linear.x, twist.linear.y, twist.linear.z = self.linear
         twist.angular.x, twist.angular.y, twist.angular.z = self.angular
