@@ -32,7 +32,7 @@ class ImuMadgwickNode(Node):
             msg.linear_acceleration.x, 
             msg.linear_acceleration.y,
             msg.linear_acceleration.z
-            ]) / self.config.gravity_value
+        ]) / self.config.gravity_value
 
         gyr = np.array([
             msg.angular_velocity.x,
@@ -40,7 +40,10 @@ class ImuMadgwickNode(Node):
             msg.angular_velocity.z
         ])
 
-        self.q = self.filter.updateIMU(self.q, gyr, acc, dt)
+        # 修正ここから
+        self.filter.updateIMU(gyr=gyr, acc=acc)
+        self.q = self.filter.Q
+        # 修正ここまで
 
         out_msg = Imu()
         out_msg.header = msg.header
@@ -49,6 +52,7 @@ class ImuMadgwickNode(Node):
         out_msg.orientation = Quaternion(x=self.q[1], y=self.q[2], z=self.q[3], w=self.q[0])
 
         self.pub.publish(out_msg)
+
 
 def main(args=None):
     rclpy.init(args=args)
