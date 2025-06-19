@@ -52,3 +52,19 @@ class JoyToTwistNode(Node):
         twist.angular.x, twist.angular.y, twist.angular.z = self.angular
 
         self.twist_publisher.publish(twist)
+
+def main(args=None):
+    import rclpy
+
+    rclpy.init(args=args)
+    node = JoyToTwistNode()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
