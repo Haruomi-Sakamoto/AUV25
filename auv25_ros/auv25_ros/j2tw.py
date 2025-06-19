@@ -25,10 +25,10 @@ class JoyToTwistNode(Node):
         self.axes = joy_msg.axes
         self.buttons = joy_msg.buttons
 
-        if self.buttons[7] == 1 and self.prev_button7 == 0:
+        if len(self.buttons) > 7 and self.buttons[7] == 1 and self.prev_button7 == 0:
             self.armed = True
             self.get_logger().info('ARMED')
-        if self.buttons[6] == 1 and self.prev_button6 == 0:
+        if len(self.buttons) > 6 and self.buttons[6] == 1 and self.prev_button6 == 0:
             self.armed = False
             self.get_logger().info('DISARMED')
         
@@ -40,12 +40,12 @@ class JoyToTwistNode(Node):
                 self.linear[i] = 0.0
                 self.angular[i] = 0.0
         else:
-            self.linear[0] = self.axes[4] * self.config.twist.scale_linear
-            self.linear[1] = self.axes[3] * self.config.twist.scale_linear
-            self.linear[2] = ((-self.axes[5] + 1) / 2 - (self.axes[2] - 1) / 2) * self.config.twist.scale_linear
-            self.angular[0] = self.config.twist.angular[0]
-            self.angular[1] = self.config.twist.angular[1]
-            self.angular[2] = self.axes[0] * self.config.twist.scale_angular
+            self.linear[0] = self.axes[4] * self.config.scale_linear if len(self.axes) > 4 else 0.0
+            self.linear[1] = self.axes[3] * self.config.scale_linear if len(self.axes) > 3 else 0.0
+            self.linear[2] = ((-self.axes[5] + 1) / 2 - (self.axes[2] - 1) / 2) * self.config.scale_linear
+            self.angular[0] = self.config.angular[0]
+            self.angular[1] = self.config.angular[1]
+            self.angular[2] = self.axes[0] * self.config.scale_angular if len(self.axes) > 0 else 0.0
 
         twist = Twist()
         twist.linear.x, twist.linear.y, twist.linear.z = self.linear
@@ -54,8 +54,6 @@ class JoyToTwistNode(Node):
         self.twist_publisher.publish(twist)
 
 def main(args=None):
-    import rclpy
-
     rclpy.init(args=args)
     node = JoyToTwistNode()
     try:
