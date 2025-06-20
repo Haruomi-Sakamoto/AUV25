@@ -4,20 +4,16 @@ from sensor_msgs.msg import Imu
 from ahrs.filters import Madgwick
 import numpy as np
 from geometry_msgs.msg import Quaternion
-
 from auv25_ros.config import MadgwickConfig
 
 class ImuMadgwickNode(Node):
     def __init__(self):
         super().__init__('imu_madgwick_node')
         self.config = MadgwickConfig()
-
         self.sub = self.create_subscription(Imu, 'imu/data_raw', self.callback, 10)
         self.pub = self.create_publisher(Imu, 'imu/data_orientation', 10)
-
-        self.filter = Madgwick()
+        self.filter = Madgwick(sampleperiod=1.0 / self.config.update_rate)
         self.q = np.array(self.config.initial_orientation)
-
         self.last_time = None
 
     def callback(self, msg: Imu):
@@ -25,11 +21,12 @@ class ImuMadgwickNode(Node):
         if self.last_time is None:
             self.last_time = current_time
             return
+
         dt = (current_time - self.last_time).nanoseconds * 1e-9
         self.last_time = current_time
 
         acc = np.array([
-            msg.linear_acceleration.x, 
+            msg.linear_acceleration.x,
             msg.linear_acceleration.y,
             msg.linear_acceleration.z
         ]) / self.config.gravity_value
@@ -40,8 +37,9 @@ class ImuMadgwickNode(Node):
             msg.angular_velocity.z
         ])
 
-        # 修正ここ
-        self.q = self.filter.updateIMU(self.q, gyr=gyr, acc=acc)
+        new_q = self.filter.updateIMU(self.q, acc=acc, gyr=gyr)
+        if new_q is not None:
+            self.q = new_q
 
         out_msg = Imu()
         out_msg.header = msg.header
@@ -50,8 +48,6 @@ class ImuMadgwickNode(Node):
         out_msg.orientation = Quaternion(x=self.q[1], y=self.q[2], z=self.q[3], w=self.q[0])
 
         self.pub.publish(out_msg)
-
-
 
 def main(args=None):
     rclpy.init(args=args)
