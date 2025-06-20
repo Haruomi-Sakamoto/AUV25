@@ -31,6 +31,5 @@ class MPU6050Config:
 class MadgwickConfig:
     def __init__(self):
         self.initial_orientation = [1.0, 0.0, 0.0, 0.0]
-
-        # 重力加速度 [m/s^2]
         self.gravity_value = 9.80665
+        self.update_rate = 100.0

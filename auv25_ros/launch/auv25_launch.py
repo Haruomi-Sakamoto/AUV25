@@ -49,6 +49,14 @@ def generate_launch_description():
         output='log',
     )
 
+    imu_q2rpy= Node(
+        package=package_name,
+        executable='imu_q2rpy',
+        name='imu_q2rpy_node',
+        namespace='auv25',
+        output='log',
+    )
+
     j2tw = Node(
         package=package_name,
         executable='j2tw',
@@ -64,6 +72,7 @@ def generate_launch_description():
         #pwmgen,
         mpu6050,
         imu_madgwick,
+        imu_q2rpy,
         j2tw,
     ])
 

@@ -10,8 +10,8 @@ class ImuMadgwickNode(Node):
     def __init__(self):
         super().__init__('imu_madgwick_node')
         self.config = MadgwickConfig()
-        self.sub = self.create_subscription(Imu, 'imu/data_raw', self.callback, 10)
-        self.pub = self.create_publisher(Imu, 'imu/data_orientation', 10)
+        self.sub = self.create_subscription(Imu, 'imu/raw', self.callback, 10)
+        self.pub = self.create_publisher(Imu, 'imu/quaternion', 10)
         self.filter = Madgwick(sampleperiod=1.0 / self.config.update_rate)
         self.q = np.array(self.config.initial_orientation)
         self.last_time = None

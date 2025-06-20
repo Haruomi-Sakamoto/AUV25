@@ -26,6 +26,7 @@ setup(
             'pwmgen = auv25_ros.pwmgen:main',
             'mpu6050 = auv25_ros.mpu6050:main',
             'imu_madgwick = auv25_ros.imu_madgwick:main',
+            'imu_q2rpy = auv25_ros.imu_q2rpy:main',
             'j2tw = auv25_ros.j2tw:main',
         ],
     },

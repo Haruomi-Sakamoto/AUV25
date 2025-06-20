@@ -12,7 +12,7 @@ class MPU6050Node(Node):
         super().__init__('mpu6050_node')
         self.config = MPU6050Config()
 
-        self.publisher_ = self.create_publisher(Imu, 'imu/data_raw', 10)
+        self.publisher_ = self.create_publisher(Imu, 'imu/raw', 10)
         self.timer = self.create_timer(0.1, self.timer_callback)
 
         self.bus = None
