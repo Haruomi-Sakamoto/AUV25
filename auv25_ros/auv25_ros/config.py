@@ -1,3 +1,5 @@
+import math
+
 class TwistConfig:
     def __init__(self):
         self.linear = [0.0, 0.0, 0.0]
@@ -15,10 +17,10 @@ class MPU6050Config:
         self.gyro_scale_modifier = 131.0     # ±250 °/s
         self.gravity = 9.80665               # m/s²
 
-        # 加速度共分散の対角成分（m/s^2 の分散）
+        # dispersion of m/s^2
         self.accel_cov_diag = [0.1, 0.1, 0.1]
 
-        # 角速度共分散の対角成分（rad/s の分散）
+        # dispersion of rad/s
         self.gyro_cov_diag = [0.01, 0.01, 0.01]
 
         self.power_mgmt_1 = 0x6B
@@ -27,6 +29,21 @@ class MPU6050Config:
 
         self.accel_xout_h = 0x3B
         self.gyro_xout_h = 0x43
+
+class ThrusterConfig:
+    def __init__(self):
+        # [ surge, sway, heave, roll, pitch, yaw ]^T → [ thr1..thr6 ]^T
+        r2 = 1 / math.sqrt(2)
+        self.allocation_matrix = [
+            [  0,   0,  1,  1,  0,  0],  # Thruster1
+            [  0,   0,  1, -1,  0,  0],  # Thruster2
+            [ r2, -r2,  0,  0,  1,  0],  # Thruster3
+            [-r2, -r2,  0,  0,  1,  0],  # Thruster4
+            [-r2,  r2,  0,  0, -1,  0],  # Thruster5
+            [ r2,  r2,  0,  0, -1,  0],  # Thruster6
+        ]
+        # speed scale
+        self.scale = 1.0
 
 class MadgwickConfig:
     def __init__(self):
