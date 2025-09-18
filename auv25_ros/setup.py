@@ -23,10 +23,11 @@ setup(
         'console_scripts': [
             'pingsonner = auv25_ros.pingsonner:main',
             'gpioctrl = auv25_ros.gpioctrl:main',
-            'pwmgen = auv25_ros.pwmgen:main',
+            'pwmtest = auv25_ros.pwmtest:main',
             'mpu6050 = auv25_ros.mpu6050:main',
             'j2tw = auv25_ros.j2tw:main',
             'thctrl = auv25_ros.thctrl:main',
+            'pwmgen = auv25_ros.pwmgen:main',
         ],
     },
 )

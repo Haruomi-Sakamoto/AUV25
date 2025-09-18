@@ -24,15 +24,7 @@ def generate_launch_description():
         namespace='auv25',
         output='log',
     )
-    
-    pwmgen = Node(
-        package=package_name,
-        executable='pwmgen',
-        name='pwmgen_node',
-        namespace='auv25',
-        output='log',
-    )
-    """
+    """    
     mpu6050 = Node(
         package=package_name,
         executable='mpu6050',
@@ -56,6 +48,14 @@ def generate_launch_description():
         namespace='auv25',
         output='log',
     )
+
+    pwmgen = Node(
+        package=package_name,
+        executable='pwmgen',
+        name='pwmgen_node',
+        namespace='auv25',
+        output='log',
+    )
     
 
     return LaunchDescription([
@@ -64,5 +64,7 @@ def generate_launch_description():
         #pwmgen,
         mpu6050,
         j2tw,
+        thctrl,
+        pwmgen,
     ])
 

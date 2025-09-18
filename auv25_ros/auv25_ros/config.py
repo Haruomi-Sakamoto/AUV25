@@ -5,8 +5,7 @@ class TwistConfig:
         self.linear = [0.0, 0.0, 0.0]
         self.angular = [0.0, 0.0, 0.0]
 
-        self.scale_linear = 1.0
-        self.scale_angular = 1.0
+        self.scale = 1.0
 
 class MPU6050Config:
     def __init__(self):
@@ -45,8 +44,10 @@ class ThrusterConfig:
         # speed scale
         self.scale = 1.0
 
-class MadgwickConfig:
-    def __init__(self):
-        self.initial_orientation = [1.0, 0.0, 0.0, 0.0]
-        self.gravity_value = 9.80665
-        self.update_rate = 100.0
+        self.pwm_neutral_us = 1500   # stop
+        self.pwm_max_us     = 2000   # maximum forward
+        self.pwm_min_us     = 1000   # maximum backward
+
+        self.pwm_range_us   = 500
+
+        self.num_thrusters  = 6
