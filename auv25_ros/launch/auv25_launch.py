@@ -6,25 +6,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     package_name = "auv25_ros"
-    """
-    pingsonner = Node(
-        package=package_name,
-        executable='pingsonner',
-        name='pingsonner_node',
-        namespace='auv25',
-        output='log',
-        parameters=[{'robot_namespace': 'auv25'}],
-        remappings=[('/sonner_data', '/auv25/sonner_data')],
-    )
-
-    gpioctrl = Node(
-        package=package_name,
-        executable='gpioctrl',
-        name='gpioctrl_node',
-        namespace='auv25',
-        output='log',
-    )
-    """    
+    
     mpu6050 = Node(
         package=package_name,
         executable='mpu6050',

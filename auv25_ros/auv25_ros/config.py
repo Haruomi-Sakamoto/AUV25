@@ -5,7 +5,8 @@ class TwistConfig:
         self.linear = [0.0, 0.0, 0.0]
         self.angular = [0.0, 0.0, 0.0]
 
-        self.scale = 1.0
+        self.scale_linear = 1.0   # 最大0.5 m/s
+        self.scale_angular = 1.0  # 最大1.0 rad/s
 
 class MPU6050Config:
     def __init__(self):
@@ -36,18 +37,22 @@ class ThrusterConfig:
         self.allocation_matrix = [
             [  0,   0,  1,  1,  0,  0],  # Thruster1
             [  0,   0,  1, -1,  0,  0],  # Thruster2
-            [ r2, -r2,  0,  0,  1,  0],  # Thruster3
-            [-r2, -r2,  0,  0,  1,  0],  # Thruster4
-            [-r2,  r2,  0,  0, -1,  0],  # Thruster5
-            [ r2,  r2,  0,  0, -1,  0],  # Thruster6
+            [ r2, -r2,  0,  0,  0,  1],  # Thruster3
+            [-r2, -r2,  0,  0,  0,  1],  # Thruster4
+            [-r2,  r2,  0,  0,  0, -1],  # Thruster5
+            [ r2,  r2,  0,  0,  0, -1],  # Thruster6
         ]
         # speed scale
-        self.scale = 1.0
+        self.scale = 1.0    
+
+class PCA9685Config:
+    def __init__(self):
+        self.pwmfreq = 50
+        self.thruster_channel = [4,5,6,7,8,9]
 
         self.pwm_neutral_us = 1500   # stop
         self.pwm_max_us     = 2000   # maximum forward
         self.pwm_min_us     = 1000   # maximum backward
-
         self.pwm_range_us   = 500
 
         self.num_thrusters  = 6

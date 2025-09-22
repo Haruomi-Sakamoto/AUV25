@@ -15,10 +15,9 @@ class pwmtestNode(Node):
         # I2Cの設定
         i2c = busio.I2C(board.SCL, board.SDA)
         self.pwm = PCA9685(i2c)
-        self.pwm.frequency = 50  # PWM周波数を50Hzに設定
+        self.pwm.frequency = 50
 
     def timer_callback(self):
-        # 204〜409のランダムな値を取得
         sonner_data = float(random.randint(2400, 4800)) 
         self.pwm.channels[15].duty_cycle = int(sonner_data)
 

@@ -21,36 +21,37 @@ class JoyToTwistNode(Node):
         self.prev_button7 = 0
         self.prev_button6 = 0
 
+        self.timer = self.create_timer(0.1, self.publish_twist)
+
     def joy_callback(self, joy_msg: Joy):
         self.axes = joy_msg.axes
         self.buttons = joy_msg.buttons
 
-        if len(self.buttons) > 7 and self.buttons[7] == 1 and self.prev_button7 == 0:
+        if self.buttons[7] == 1 and self.prev_button7 == 0 and not self.armed :
             self.armed = True
             self.get_logger().info('ARMED')
-        if len(self.buttons) > 6 and self.buttons[6] == 1 and self.prev_button6 == 0:
+        if self.buttons[6] == 1 and self.prev_button6 == 0 and self.armed:
             self.armed = False
             self.get_logger().info('DISARMED')
         
         self.prev_button7 = self.buttons[7] if len(self.buttons) > 7 else 0
         self.prev_button6 = self.buttons[6] if len(self.buttons) > 6 else 0
 
-        if not self.armed:
-            for i in range(3):
-                self.linear[i] = 0.0
-                self.angular[i] = 0.0
-        else:
-            self.linear[0] = self.axes[4] * self.config.scale_linear if len(self.axes) > 4 else 0.0
-            self.linear[1] = -(self.axes[3]) * self.config.scale_linear if len(self.axes) > 3 else 0.0
-            self.linear[2] = ((self.axes[2] - 1) / 2 - (self.axes[5] + 1) / 2 + 1) * self.config.scale_linear
+        if self.armed:
+            self.linear[0] = -self.axes[2] * self.config.scale_linear if len(self.axes) > 2 else 0.0
+            self.linear[1] = self.axes[3] * self.config.scale_linear if len(self.axes) > 3 else 0.0
+            self.linear[2] = self.axes[1] * self.config.scale_linear if len(self.axes) > 1 else 0.0
             self.angular[0] = self.config.angular[0]
             self.angular[1] = self.config.angular[1]
-            self.angular[2] = -(self.axes[0]) * self.config.scale_angular if len(self.axes) > 0 else 0.0
+            self.angular[2] = -self.axes[0] * self.config.scale_linear if len(self.axes) > 0 else 0.0
+        else:
+            self.linear[:] = [0.0, 0.0, 0.0]
+            self.angular[:] = [0.0, 0.0, 0.0]
 
+    def publish_twist(self):
         twist = Twist()
         twist.linear.x, twist.linear.y, twist.linear.z = self.linear
         twist.angular.x, twist.angular.y, twist.angular.z = self.angular
-
         self.twist_publisher.publish(twist)
 
 def main(args=None):
