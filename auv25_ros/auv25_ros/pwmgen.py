@@ -8,6 +8,7 @@ from adafruit_pca9685 import PCA9685
 
 from auv25_ros.config import PCA9685Config
 
+
 class PWMGenerateNode(Node):
     def __init__(self):
         super().__init__('pwmgen_node')
@@ -17,26 +18,33 @@ class PWMGenerateNode(Node):
         self.pwm = PCA9685(i2c)
         self.pwm.frequency = self.cfg.pwmfreq
 
-        self.create_subscription(Float64MultiArray,'/thruster_output',self.thruster_callback,10)
+        self.create_subscription(Float64MultiArray, '/thruster_output', self.thruster_callback, 10)
+        self.pub_pulse = self.create_publisher(Float64MultiArray, '/thruster_pulse_us', 10)
 
         self.get_logger().info('PWMThrusterNode started')
 
     def thruster_callback(self, msg: Float64MultiArray):
-        #-1.0 ~ 1.0 to PWM
         data = msg.data
         if len(data) < self.cfg.num_thrusters:
-            self.get_logger().warn('thruster_output length is not 6')
+            self.get_logger().warn('thruster_output length is not sufficient')
             return
 
+        pulse_list = []
+        pulse_length_us = 1_000_000 / self.pwm.frequency / 4096
+
         for i in range(self.cfg.num_thrusters):
-            cmd = max(min(data[i], 1.0), -1.0)
+            pulse_us = self.cfg.pwm_neutral_us + data[i] * self.cfg.pwm_range_us * self.cfg.speed_scale + 90
+            pulse_count = int(pulse_us / pulse_length_us)
+            duty = int((pulse_count / 4096) * 65535)
 
-            pulse_us = self.cfg.pwm_neutral_us + cmd * self.cfg.pwm_range_us
-
-            duty = int((pulse_us / 20000.0) * 0xFFFF)
             self.pwm.channels[self.cfg.thruster_channel[i]].duty_cycle = duty
+            pulse_list.append(pulse_us)
 
-        self.get_logger().debug(f"PWM output: {[round(x,2) for x in data]}")
+        msg_pulse = Float64MultiArray()
+        msg_pulse.data = pulse_list
+        self.pub_pulse.publish(msg_pulse)
+
+        self.get_logger().debug(f"Pulse_us: {[round(p, 1) for p in pulse_list]}")
 
 def main(args=None):
     rclpy.init(args=args)

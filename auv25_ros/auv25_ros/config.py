@@ -43,16 +43,16 @@ class ThrusterConfig:
             [ r2,  r2,  0,  0,  0, -1],  # Thruster6
         ]
         # speed scale
-        self.scale = 1.0    
+        self.scale = 1.0   
 
 class PCA9685Config:
     def __init__(self):
         self.pwmfreq = 50
-        self.thruster_channel = [4,5,6,7,8,9]
+        self.thruster_channel = [5,7,9,11,13,15]
 
         self.pwm_neutral_us = 1500   # stop
-        self.pwm_max_us     = 2000   # maximum forward
-        self.pwm_min_us     = 1000   # maximum backward
-        self.pwm_range_us   = 500
+        self.pwm_range_us   = 400
+
+        self.speed_scale = 0.5
 
         self.num_thrusters  = 6
