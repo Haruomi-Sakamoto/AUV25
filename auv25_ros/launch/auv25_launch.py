@@ -54,6 +54,7 @@ def generate_launch_description():
         #pwmgen,
         mpu6050,
         j2tw,
+        serrecv,
         thctrl,
         pwmgen,
     ])
