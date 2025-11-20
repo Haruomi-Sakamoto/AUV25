@@ -21,7 +21,7 @@ class PWMGenerateNode(Node):
         self.pwm.frequency = self.cfg.pwmfreq
 
         # サーボ角度（初期値）
-        self.camera_angle = 90.0
+        self.camera_angle = 110.0
 
         # Thruster 購読
         self.create_subscription(Float64MultiArray, '/thruster_output',

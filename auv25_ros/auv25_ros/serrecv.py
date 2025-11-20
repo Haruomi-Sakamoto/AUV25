@@ -11,7 +11,7 @@ import struct
 
 class SensorsSerialNode(Node):
     def __init__(self):
-        super().__init__('sensors_serial_node')
+        super().__init__('serrecv_node')
 
         # --- シリアル設定 ---
         self.ser = serial.Serial(

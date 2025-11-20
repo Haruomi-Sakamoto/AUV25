@@ -28,6 +28,7 @@ setup(
             'j2tw = auv25_ros.j2tw:main',
             'thctrl = auv25_ros.thctrl:main',
             'pwmgen = auv25_ros.pwmgen:main',
+            'serrecv = auv25_ros.serrecv:main',
         ],
     },
 )

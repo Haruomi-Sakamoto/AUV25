@@ -23,6 +23,14 @@ def generate_launch_description():
         output='log',
     )
 
+    serrecv = Node(
+        package=package_name,
+        executable='serrecv',
+        name='serrecv_node',
+        namespace='auv25',
+        output='log',
+    )
+
     thctrl = Node(
         package=package_name,
         executable='thctrl',
