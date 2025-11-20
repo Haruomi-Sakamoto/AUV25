@@ -48,7 +48,9 @@ class ThrusterConfig:
 class PCA9685Config:
     def __init__(self):
         self.pwmfreq = 50
-        self.thruster_channel = [5,7,9,11,13,15]
+
+        self.camera_channel = 3
+        self.thruster_channel = [5,7,9,13,11,15]
 
         self.pwm_neutral_us = 1500   # stop
         self.pwm_range_us   = 400
