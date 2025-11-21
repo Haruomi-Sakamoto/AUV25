@@ -15,14 +15,6 @@ def generate_launch_description():
         output='log',
     )
 
-    imuculc = Node(
-        package=package_name,
-        executable='imuculc',
-        name='imuculc_node',
-        namespace='auv25',
-        output='log',
-    )
-
     j2tw = Node(
         package=package_name,
         executable='j2tw',
@@ -61,7 +53,6 @@ def generate_launch_description():
         #gpioctrl,
         #pwmgen,
         mpu6050,
-        imuculc,
         j2tw,
         serrecv,
         thctrl,
