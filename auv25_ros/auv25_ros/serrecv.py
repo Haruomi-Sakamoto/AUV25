@@ -6,15 +6,17 @@ import struct
 from std_msgs.msg import Int32MultiArray
 
 class SerialSensorReader(Node):
+    HEADER = b'ST'         # Arduino側ヘッダ
+    PACKET_SIZE = 24       # int32 ×6 = 24バイト
+
     def __init__(self):
         super().__init__('serial_sensor_reader')
 
         # --- Serial設定 ---
         port = '/dev/ttyACM0'
         baud = 115200
-
         try:
-            self.ser = serial.Serial(port, baud, timeout=1)
+            self.ser = serial.Serial(port, baud, timeout=0.1)
             self.get_logger().info(f"Connected to {port} at {baud}")
         except Exception as e:
             self.get_logger().error(f"Serial open error: {e}")
@@ -26,29 +28,44 @@ class SerialSensorReader(Node):
         # Timer (100ms)
         self.timer = self.create_timer(0.1, self.read_serial)
 
-        # 1パケット = int32 ×6 = 24 バイト
-        self.PACKET_SIZE = 24
+        # バッファ
+        self.buffer = bytearray()
 
     def read_serial(self):
-        if self.ser.in_waiting < self.PACKET_SIZE:
-            return  # データ不足
+        # --- バッファに追加 ---
+        if self.ser.in_waiting > 0:
+            self.buffer += self.ser.read(self.ser.in_waiting)
 
-        data = self.ser.read(self.PACKET_SIZE)
+        # --- ヘッダ同期ループ ---
+        while True:
+            if len(self.buffer) < 2 + self.PACKET_SIZE:
+                # データ不足
+                return
 
-        if len(data) != self.PACKET_SIZE:
-            return
+            # ヘッダ確認
+            if self.buffer[0:2] != self.HEADER:
+                # ヘッダがずれている場合、先頭バイトを捨てる
+                self.buffer.pop(0)
+                continue
 
-        # Little-endian Int32 ×6
-        try:
-            values = list(struct.unpack('<6i', data))  # 配列にまとめる
-        except struct.error as e:
-            self.get_logger().warn(f"Unpack error: {e}")
-            return
+            # ペイロード取得
+            payload = self.buffer[2:2+self.PACKET_SIZE]
 
-        msg = Int32MultiArray()
-        msg.data = values  # 配列として代入
+            # バッファから消去
+            del self.buffer[0:2+self.PACKET_SIZE]
 
-        self.pub.publish(msg)
+            try:
+                # Little-endian int32 ×6
+                values = list(struct.unpack('<6i', payload))
+            except struct.error as e:
+                self.get_logger().warn(f"Unpack error: {e}")
+                continue
+
+            # パブリッシュ
+            msg = Int32MultiArray()
+            msg.data = values
+            self.pub.publish(msg)
+            break  # 1パケットごとに処理
 
 
 def main(args=None):

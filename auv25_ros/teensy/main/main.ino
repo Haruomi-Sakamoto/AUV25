@@ -12,14 +12,17 @@ static Ping1D ping2 { Serial2 };
 MS5837 bar02;
 
 // ---- Output packet ----
-// [d1, c1, d2, c2, depth_mm, temp_cX100]
+// [d1, c1, d2, c2, depth_mm, temp_x100]
 int32_t packet[6];
+
+// ---- Header (2 bytes) ----
+const uint8_t HEADER[2] = { 'S', 'T' };
 
 static const uint8_t ledPin = 13;
 
+
 void setup() {
   Serial.begin(115200);     // PC / Raspberry Pi
-
   Serial1.begin(115200);    // Ping1D #1
   Serial2.begin(115200);    // Ping1D #2
 
@@ -48,6 +51,7 @@ void setup() {
   Serial.println("=== All Sensors Ready ===");
 }
 
+
 void loop() {
 
   // ---- Ping1 ----
@@ -71,7 +75,7 @@ void loop() {
   packet[4] = (int32_t)(depth_m * 1000.0f);   // depth(mm)
   packet[5] = (int32_t)(temp_c * 100.0f);     // temp x100
 
-  // ---- デバッグ表示（テキスト） ----
+  // ---- Debug print ----
   Serial.print("D1:");
   Serial.print(packet[0]);
   Serial.print("  C1:");
@@ -85,8 +89,9 @@ void loop() {
   Serial.print("  Temp(x100):");
   Serial.println(packet[5]);
 
-  // ---- バイナリ送信（必要なときにON） ----
-  Serial.write((uint8_t*)packet, sizeof(packet));
+  // ---- Binary transfer with header ----
+  Serial.write(HEADER, 2);                     // "ST"
+  Serial.write((uint8_t *)packet, 24);         // 24 bytes payload
 
   digitalWrite(ledPin, !digitalRead(ledPin));
   delay(100);

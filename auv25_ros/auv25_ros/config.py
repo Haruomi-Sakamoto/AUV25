@@ -39,8 +39,8 @@ class ThrusterConfig:
             [  0,   0,  1, -1,  0,  0],  # Thruster2
             [ r2, -r2,  0,  0,  0,  1],  # Thruster3
             [-r2, -r2,  0,  0,  0,  1],  # Thruster4
-            [-r2,  r2,  0,  0,  0, -1],  # Thruster5
-            [ r2,  r2,  0,  0,  0, -1],  # Thruster6
+            [-r2,  r2,  0,  0,  0, 1],  # Thruster5
+            [ r2,  r2,  0,  0,  0, 1],  # Thruster6
         ]
         # speed scale
         self.scale = 1.0
@@ -51,7 +51,7 @@ class PCA9685Config:
         self.pwmfreq = 50
 
         self.camera_channel = 3
-        self.thruster_channel = [13,7,11,5,9,15]
+        self.thruster_channel = [13,11,7,5,9,15]
         self.pwm_neutral_us = 1500   # stop
         self.pwm_range_us   = 400
 
