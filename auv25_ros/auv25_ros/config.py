@@ -43,7 +43,8 @@ class ThrusterConfig:
             [ r2,  r2,  0,  0,  0, -1],  # Thruster6
         ]
         # speed scale
-        self.scale = 1.0   
+        self.scale = 1.0
+        self.num_thrusters = len(self.allocation_matrix)
 
 class PCA9685Config:
     def __init__(self):
