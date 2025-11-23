@@ -18,8 +18,8 @@ class ThrusterControlNode(Node):
         self.pub = self.create_publisher(Float64MultiArray, '/thruster_output', 10)
 
 
-        self.max_acc = 0.02
-        self.max_dec = 0.03
+        self.max_acc = 0.1
+        self.max_dec = 0.1
         self.current_output = np.zeros(self.cfg.num_thrusters, dtype=float)
 
         self.get_logger().info('ThrusterControlNode + Trapezoid started')
