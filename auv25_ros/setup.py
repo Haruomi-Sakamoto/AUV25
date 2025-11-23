@@ -12,7 +12,6 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/auv25_launch.py', 'launch/auv25_remotelaunch.py']),
     ],
-    install_requires=['setuptools', 'rosidl_runtime_py'],
     zip_safe=True,
     maintainer='haruomi',
     maintainer_email='haruomi@todo.todo',

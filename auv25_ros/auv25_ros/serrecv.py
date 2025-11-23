@@ -3,16 +3,14 @@ import rclpy
 from rclpy.node import Node
 import serial
 import struct
-
-from auv25_ros.msg import SensorPacket
-
+from std_msgs.msg import Int32MultiArray
 
 class SerialSensorReader(Node):
     def __init__(self):
         super().__init__('serial_sensor_reader')
 
         # --- Serial設定 ---
-        port = '/dev/ttyACM0'  # 必要に応じて変更
+        port = '/dev/ttyACM0'
         baud = 115200
 
         try:
@@ -23,7 +21,7 @@ class SerialSensorReader(Node):
             raise
 
         # Publisher
-        self.pub = self.create_publisher(SensorPacket, 'sensor_packet', 10)
+        self.pub = self.create_publisher(Int32MultiArray, 'sensor_packet', 10)
 
         # Timer (100ms)
         self.timer = self.create_timer(0.1, self.read_serial)
@@ -42,18 +40,13 @@ class SerialSensorReader(Node):
 
         # Little-endian Int32 ×6
         try:
-            d1, c1, d2, c2, depth_mm, temp_x100 = struct.unpack('<6i', data)
+            values = list(struct.unpack('<6i', data))  # 配列にまとめる
         except struct.error as e:
             self.get_logger().warn(f"Unpack error: {e}")
             return
 
-        msg = SensorPacket()
-        msg.d1 = d1
-        msg.c1 = c1
-        msg.d2 = d2
-        msg.c2 = c2
-        msg.depth_mm = depth_mm
-        msg.temp_x100 = temp_x100
+        msg = Int32MultiArray()
+        msg.data = values  # 配列として代入
 
         self.pub.publish(msg)
 
