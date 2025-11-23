@@ -1,72 +1,69 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64MultiArray
-
 import serial
 import struct
 
+from auv25_ros.msg import SensorPacket
 
-class SensorsSerialNode(Node):
+
+class SerialSensorReader(Node):
     def __init__(self):
-        super().__init__('serrecv_node')
+        super().__init__('serial_sensor_reader')
 
-        # --- シリアル設定 ---
-        self.ser = serial.Serial(
-            port='/dev/ttyACM0',   # ← Arduino に合わせて変更
-            baudrate=115200,
-            timeout=1
-        )
+        # --- Serial設定 ---
+        port = '/dev/ttyACM0'  # 必要に応じて変更
+        baud = 115200
 
-        # --- Publisher ---
-        self.pub = self.create_publisher(Float64MultiArray, '/sensors/data', 10)
+        try:
+            self.ser = serial.Serial(port, baud, timeout=1)
+            self.get_logger().info(f"Connected to {port} at {baud}")
+        except Exception as e:
+            self.get_logger().error(f"Serial open error: {e}")
+            raise
 
-        # --- タイマー（100ms） ---
+        # Publisher
+        self.pub = self.create_publisher(SensorPacket, 'sensor_packet', 10)
+
+        # Timer (100ms)
         self.timer = self.create_timer(0.1, self.read_serial)
 
-        self.get_logger().info('SensorsSerialNode started')
+        # 1パケット = int32 ×6 = 24 バイト
+        self.PACKET_SIZE = 24
 
     def read_serial(self):
-        """Arduino から 6×int32 のバイナリを読み Float64MultiArray で publish"""
-        expected_bytes = 6 * 4  # int32 × 6 = 24 byte
+        if self.ser.in_waiting < self.PACKET_SIZE:
+            return  # データ不足
 
-        if self.ser.in_waiting < expected_bytes:
+        data = self.ser.read(self.PACKET_SIZE)
+
+        if len(data) != self.PACKET_SIZE:
             return
 
-        data = self.ser.read(expected_bytes)
-
-        if len(data) != expected_bytes:
-            self.get_logger().warn('Invalid packet size')
+        # Little-endian Int32 ×6
+        try:
+            d1, c1, d2, c2, depth_mm, temp_x100 = struct.unpack('<6i', data)
+        except struct.error as e:
+            self.get_logger().warn(f"Unpack error: {e}")
             return
 
-        # --- バイナリ → int32 × 6 ---
-        values_int = struct.unpack('<6i', data)  # little-endian
-        values_float = [float(v) for v in values_int]
+        msg = SensorPacket()
+        msg.d1 = d1
+        msg.c1 = c1
+        msg.d2 = d2
+        msg.c2 = c2
+        msg.depth_mm = depth_mm
+        msg.temp_x100 = temp_x100
 
-        # Publish
-        msg = Float64MultiArray()
-        msg.data = values_float
         self.pub.publish(msg)
-
-        self.get_logger().debug(
-            f"D1={values_float[0]} C1={values_float[1]}  "
-            f"D2={values_float[2]} C2={values_float[3]}  "
-            f"Depth(mm)={values_float[4]} Temp(x100)={values_float[5]}"
-        )
 
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SensorsSerialNode()
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
+    node = SerialSensorReader()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':

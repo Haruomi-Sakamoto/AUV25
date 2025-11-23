@@ -51,7 +51,7 @@ class PCA9685Config:
         self.pwmfreq = 50
 
         self.camera_channel = 3
-        self.thruster_channel = [15,7,11,13,9,5]
+        self.thruster_channel = [15,7,11,5,9,13]
         self.pwm_neutral_us = 1500   # stop
         self.pwm_range_us   = 400
 
