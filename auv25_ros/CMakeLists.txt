@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+# ROS2 Message
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/SensorPacket.msg"
 )
