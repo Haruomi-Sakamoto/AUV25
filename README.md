@@ -21,6 +21,7 @@ ros2 launch auv25_ros auv25_remotelaunch.py<br>
 <br>
 ssh haruomi@192.168.100.2<br>
 
+cd ~/colon_ws<br>
 rm -rf install build log<br>
 unset AMENT_PREFIX_PATH<br>
 unset CMAKE_PREFIX_PATH<br>
