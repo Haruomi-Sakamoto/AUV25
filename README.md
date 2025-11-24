@@ -20,10 +20,15 @@ source install/setup.bash<br>
 ros2 launch auv25_ros auv25_remotelaunch.py<br>
 <br>
 ssh haruomi@192.168.100.2<br>
-cd ~/colon_ws<br>
-colcon build<br>
+
+rm -rf install build log<br>
+unset AMENT_PREFIX_PATH<br>
+unset CMAKE_PREFIX_PATH<br>
+source /opt/ros/jazzy/setup.bash<br>
+colcon build --symlink-install<br>
 source install/setup.bash<br>
 ros2 launch auv25_ros auv25_launch.py<br>
+
 <br>
 
 ### 3. check topic
