@@ -5,9 +5,11 @@ import serial
 import struct
 from std_msgs.msg import Int32MultiArray
 
+
 class SerialSensorReader(Node):
-    HEADER = b'ST'         # Arduino側ヘッダ
-    PACKET_SIZE = 24       # int32 ×6 = 24バイト
+    HEADER = b'ST'
+    PACKET_SIZE = 24  # int32 × 6 = 24 bytes
+    MAX_BUFFER = 4096  # バッファ暴走防止
 
     def __init__(self):
         super().__init__('serial_sensor_reader')
@@ -15,12 +17,12 @@ class SerialSensorReader(Node):
         # --- Serial設定 ---
         port = '/dev/ttyACM0'
         baud = 115200
-        try:
-            self.ser = serial.Serial(port, baud, timeout=0.1)
-            self.get_logger().info(f"Connected to {port} at {baud}")
-        except Exception as e:
-            self.get_logger().error(f"Serial open error: {e}")
-            raise
+
+        self.port = port
+        self.baud = baud
+        self.ser = None
+
+        self.open_serial()
 
         # Publisher
         self.pub = self.create_publisher(Int32MultiArray, 'sensor_packet', 10)
@@ -31,31 +33,68 @@ class SerialSensorReader(Node):
         # バッファ
         self.buffer = bytearray()
 
-    def read_serial(self):
-        # --- バッファに追加 ---
-        if self.ser.in_waiting > 0:
-            self.buffer += self.ser.read(self.ser.in_waiting)
+    def open_serial(self):
+        """シリアルを開く（失敗時は警告のみ）"""
+        try:
+            self.ser = serial.Serial(self.port, self.baud, timeout=0.1)
+            self.get_logger().info(f"Connected to {self.port} at {self.baud}")
+        except Exception as e:
+            self.ser = None
+            self.get_logger().error(f"Serial open failed: {e}")
 
-        # --- ヘッダ同期ループ ---
-        while True:
-            if len(self.buffer) < 2 + self.PACKET_SIZE:
-                # データ不足
+    def read_serial(self):
+        """シリアル読み取りループ"""
+        # 接続が落ちたら再接続を試す
+        if self.ser is None or not self.ser.is_open:
+            self.open_serial()
+            return
+
+        try:
+            waiting = self.ser.in_waiting
+        except Exception:
+            self.get_logger().warn("Serial disconnected—retrying...")
+            self.ser = None
+            return
+
+        # --- バッファ追加 ---
+        if waiting > 0:
+            try:
+                self.buffer += self.ser.read(waiting)
+            except Exception:
+                self.get_logger().warn("Serial read error—closing port")
+                self.ser.close()
+                self.ser = None
                 return
 
-            # ヘッダ確認
+        # バッファサイズ制限
+        if len(self.buffer) > self.MAX_BUFFER:
+            self.buffer = self.buffer[-self.MAX_BUFFER:]
+            self.get_logger().warn("Buffer truncated")
+
+        # --- ヘッダ同期 ---
+        while True:
+            required = 2 + self.PACKET_SIZE
+            if len(self.buffer) < required:
+                return
+
+            # ヘッダ探索（高速）
             if self.buffer[0:2] != self.HEADER:
-                # ヘッダがずれている場合、先頭バイトを捨てる
-                self.buffer.pop(0)
-                continue
+                idx = self.buffer.find(self.HEADER)
+                if idx == -1:
+                    # 全部捨てて次回読む
+                    self.buffer.clear()
+                    return
+                else:
+                    # ヘッダまでスキップ
+                    del self.buffer[:idx]
+                    if len(self.buffer) < required:
+                        return
 
-            # ペイロード取得
-            payload = self.buffer[2:2+self.PACKET_SIZE]
-
-            # バッファから消去
-            del self.buffer[0:2+self.PACKET_SIZE]
+            # パケット構築
+            payload = self.buffer[2:required]
+            del self.buffer[:required]
 
             try:
-                # Little-endian int32 ×6
                 values = list(struct.unpack('<6i', payload))
             except struct.error as e:
                 self.get_logger().warn(f"Unpack error: {e}")
@@ -64,16 +103,25 @@ class SerialSensorReader(Node):
             # パブリッシュ
             msg = Int32MultiArray()
             msg.data = values
+            msg.layout.dim = []  # 明示（ROS2では空でOK）
+            msg.layout.data_offset = 0
+
             self.pub.publish(msg)
-            break  # 1パケットごとに処理
+
+            # 1回で1パケット処理
+            return
 
 
 def main(args=None):
     rclpy.init(args=args)
     node = SerialSensorReader()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
