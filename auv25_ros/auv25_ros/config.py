@@ -39,8 +39,8 @@ class ThrusterConfig:
             [  0,   0,  -1, -1,  0,  0],  # Thruster2
             [ r2, -r2,  0,  0,  0,  1],  # Thruster3
             [-r2, -r2,  0,  0,  0,  1],  # Thruster4
-            [-r2,  r2,  0,  0,  0, 1],  # Thruster5
-            [ r2,  r2,  0,  0,  0, 1],  # Thruster6
+            [r2,  -r2,  0,  0,  0, -1],  # Thruster5
+            [-r2, -r2,  0,  0,  0, -1],  # Thruster6
         ]
         # speed scale
         self.scale = 1.0
