@@ -46,6 +46,14 @@ def generate_launch_description():
         namespace='auv25',
         output='log',
     )
+
+    campub = Node(
+        package=package_name,
+        executable='campub',
+        name='campub_node',
+        namespace='auv25',
+        output='log',
+    )
     
 
     return LaunchDescription([
@@ -57,5 +65,6 @@ def generate_launch_description():
         serrecv,
         thctrl,
         pwmgen,
+        campub,
     ])
 
