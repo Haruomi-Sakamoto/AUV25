@@ -9,55 +9,48 @@ class USBCameraNode(Node):
     def __init__(self):
         super().__init__('campub_node')
 
-        self.declare_parameter('device', '/dev/video0')
-        self.declare_parameter('width', 640)
-        self.declare_parameter('height', 480)
-        self.declare_parameter('fps', 10)
-
-        device = self.get_parameter('device').get_parameter_value().string_value
-        width = self.get_parameter('width').get_parameter_value().integer_value
-        height = self.get_parameter('height').get_parameter_value().integer_value
-        fps = self.get_parameter('fps').get_parameter_value().integer_value
-
+        # --- GStreamer パイプライン（v4l2src） ---
         pipeline = (
             "v4l2src device=/dev/video0 ! "
             "image/jpeg, width=640, height=480, framerate=10/1 ! "
             "jpegdec ! videoconvert ! appsink"
         )
-        cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
+        self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
         if not self.cap.isOpened():
-            self.get_logger().error("Failed to open camera")
             raise RuntimeError("camera open failed")
 
         self.bridge = CvBridge()
-        self.publisher = self.create_publisher(Image, 'usb_image', 10)
+        self.pub = self.create_publisher(Image, '/camera/image_raw', 10)
 
-        # タイマーで低FPS制御
-        self.timer = self.create_timer(1.0 / fps, self.capture_frame)
+        # タイマーでフレーム取得（10Hz）
+        self.timer = self.create_timer(0.1, self.timer_callback)
+        self.get_logger().info("USBCameraNode started")
 
-        self.get_logger().info("USB Camera Node started")
-
-    def capture_frame(self):
+    def timer_callback(self):
         ok, frame = self.cap.read()
         if not ok:
-            self.get_logger().warn("Failed to read frame")
+            self.get_logger().warn("Failed to read frame from camera")
             return
 
-        msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
-        self.publisher.publish(msg)
+        # OpenCV 画像を ROS Image に変換してパブリッシュ
+        msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
+        self.pub.publish(msg)
 
-    def destroy_node(self):
-        if hasattr(self, 'cap'):
-            self.cap.release()
-        super().destroy_node()
+        # 任意で保存も可能
+        # cv2.imwrite("frame.jpg", frame)
 
 def main(args=None):
     rclpy.init(args=args)
     node = USBCameraNode()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.cap.release()
+        node.destroy_node()
+        rclpy.shutdown()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
