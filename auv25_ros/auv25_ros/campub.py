@@ -2,84 +2,62 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-import cv2
 from cv_bridge import CvBridge
+import cv2
 
-class UsbCameraNode(Node):
+class USBCameraNode(Node):
     def __init__(self):
-        super().__init__('usb_camera_node')
+        super().__init__('campub_node')
 
-        # パラメータ宣言
-        self.declare_parameter('device', 0)
-        self.declare_parameter('fps', 5.0)
+        self.declare_parameter('device', '/dev/video0')
         self.declare_parameter('width', 640)
         self.declare_parameter('height', 480)
-        self.declare_parameter('topic', '/camera/image_raw')
+        self.declare_parameter('fps', 10)
 
-        # パラメータ取得
-        self.device = self.get_parameter('device').value
-        self.fps = float(self.get_parameter('fps').value)
-        self.width = int(self.get_parameter('width').value)
-        self.height = int(self.get_parameter('height').value)
-        self.topic = self.get_parameter('topic').value
+        device = self.get_parameter('device').get_parameter_value().string_value
+        width = self.get_parameter('width').get_parameter_value().integer_value
+        height = self.get_parameter('height').get_parameter_value().integer_value
+        fps = self.get_parameter('fps').get_parameter_value().integer_value
 
-        # Publisher
-        self.image_publisher = self.create_publisher(Image, self.topic, 10)
-        self.bridge = CvBridge()
-
-        # カメラ起動
-        try:
-            self.cap = cv2.VideoCapture(self.device)
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        except Exception as e:
-            self.get_logger().error(f"Camera open failed: {e}")
-            raise
-
-        # タイマーでFPS制御
-        period = 1.0 / max(self.fps, 0.1)
-        self.timer = self.create_timer(period, self.capture_frame)
-
-        self.get_logger().info(
-            f"USB Camera Node started: dev={self.device}, fps={self.fps}, size={self.width}x{self.height}"
+        pipeline = (
+            f"v4l2src device={device} ! "
+            f"image/jpeg, width={width}, height={height}, framerate={fps}/1 ! "
+            f"jpegdec ! videoconvert ! appsink"
         )
 
-    def capture_frame(self):
+        self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
         if not self.cap.isOpened():
-            self.get_logger().warn("Camera is not opened")
-            return
+            self.get_logger().error("Failed to open camera")
+            raise RuntimeError("camera open failed")
 
-        ret, frame = self.cap.read()
-        if not ret:
+        self.bridge = CvBridge()
+        self.publisher = self.create_publisher(Image, 'usb_image', 10)
+
+        # タイマーで低FPS制御
+        self.timer = self.create_timer(1.0 / fps, self.capture_frame)
+
+        self.get_logger().info("USB Camera Node started")
+
+    def capture_frame(self):
+        ok, frame = self.cap.read()
+        if not ok:
             self.get_logger().warn("Failed to read frame")
             return
 
-        try:
-            image_msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
-            image_msg.header.stamp = self.get_clock().now().to_msg()
-            image_msg.header.frame_id = "usb_camera"
-            self.image_publisher.publish(image_msg)
-        except Exception as e:
-            self.get_logger().error(f"Image publish error: {e}")
+        msg = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
+        self.publisher.publish(msg)
 
     def destroy_node(self):
-        if hasattr(self, 'cap') and self.cap.isOpened():
+        if hasattr(self, 'cap'):
             self.cap.release()
         super().destroy_node()
 
-
 def main(args=None):
     rclpy.init(args=args)
-    node = UsbCameraNode()
-
-    try:
-        rclpy.spin(node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        node.destroy_node()
-        rclpy.shutdown()
-
+    node = USBCameraNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
