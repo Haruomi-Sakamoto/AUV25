@@ -27,7 +27,7 @@ setup(
             'thctrl = auv25_ros.thctrl:main',
             'pwmgen = auv25_ros.pwmgen:main',
             'serrecv = auv25_ros.serrecv:main',
-            'campub = auv25_ros.pubsub:main',
+            'campub = auv25_ros.campub:main',
         ],
     },
 )
