@@ -20,12 +20,12 @@ class USBCameraNode(Node):
         fps = self.get_parameter('fps').get_parameter_value().integer_value
 
         pipeline = (
-            f"v4l2src device={device} ! "
-            f"image/jpeg, width={width}, height={height}, framerate={fps}/1 ! "
-            f"jpegdec ! videoconvert ! appsink"
+            "v4l2src device=/dev/video0 ! "
+            "image/jpeg, width=640, height=480, framerate=10/1 ! "
+            "jpegdec ! videoconvert ! appsink"
         )
+        cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
-        self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
         if not self.cap.isOpened():
             self.get_logger().error("Failed to open camera")
             raise RuntimeError("camera open failed")
