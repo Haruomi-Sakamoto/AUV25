@@ -15,6 +15,14 @@ def generate_launch_description():
         output='log',
     )
 
+    odom = Node(
+        package=package_name,
+        executable='odom',
+        name='odom_node',
+        namespace='auv25',
+        output='log',
+    )
+
     j2tw = Node(
         package=package_name,
         executable='j2tw',
@@ -57,10 +65,8 @@ def generate_launch_description():
     
 
     return LaunchDescription([
-        #pingsonner,
-        #gpioctrl,
-        #pwmgen,
         mpu6050,
+        odom,
         j2tw,
         serrecv,
         thctrl,
