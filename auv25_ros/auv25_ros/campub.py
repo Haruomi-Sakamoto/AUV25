@@ -52,7 +52,7 @@ class USBCameraNode(Node):
             self.get_logger().info("📷 Camera connected — ready to capture via Joy")
 
     def joy_callback(self, msg: Joy):
-        button = msg.buttons[9a]  # Aボタン等、ボタン0をトリガー
+        button = msg.buttons[9]  # Aボタン等、ボタン0をトリガー
         if button == 1 and self.last_button_state == 0:  # rising edge
             self.capture_frame()
         self.last_button_state = button
