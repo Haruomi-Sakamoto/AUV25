@@ -4,6 +4,7 @@ from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Quaternion, Twist
 import math
+import numpy as np  # ベクトル計算用にnumpyを追加
 
 def quaternion_from_euler(roll, pitch, yaw):
     """
@@ -23,6 +24,19 @@ def quaternion_from_euler(roll, pitch, yaw):
     q.z = cr * cp * sy - sr * sp * cy
     return q
 
+def rotate_vector(v, q):
+    """
+    クォータニオン q を使ってベクトル v を回転させる (Body -> World)
+    """
+    x, y, z = v
+    qx, qy, qz, qw = q.x, q.y, q.z, q.w
+
+    # クォータニオン回転式
+    rx = x * (1 - 2*(qy**2 + qz**2)) + y * (2*(qx*qy - qz*qw)) + z * (2*(qx*qz + qy*qw))
+    ry = x * (2*(qx*qy + qz*qw)) + y * (1 - 2*(qx**2 + qz**2)) + z * (2*(qy*qz - qx*qw))
+    rz = x * (2*(qx*qz - qy*qw)) + y * (2*(qy*qz + qx*qw)) + z * (1 - 2*(qx**2 + qy**2))
+    return np.array([rx, ry, rz])
+
 class ImuOdometryNode(Node):
     def __init__(self):
         super().__init__('odom_node')
@@ -31,16 +45,20 @@ class ImuOdometryNode(Node):
         self.pub_odom = self.create_publisher(Odometry, 'imu/odom_estimate', 10)
 
         self.last_time = None
-        self.vel_y = 0.0
-        self.vel_z = 0.0
-        self.pos_y = 0.0
-        self.pos_z = 0.0
+        
+        # 状態量 (World Frame: X=East/Start, Y=North/Left, Z=Up)
+        self.pos = np.array([0.0, 0.0, 0.0])
+        self.vel = np.array([0.0, 0.0, 0.0])
 
         self.roll = 0.0
         self.pitch = 0.0
         self.yaw = 0.0
 
-        self.get_logger().info("IMU Odometry + Attitude Node started.")
+        # パラメータ
+        self.GRAVITY = 9.81
+        self.ALPHA = 0.98  # 相補フィルター係数
+
+        self.get_logger().info("IMU Odometry Node (Corrected Axes) started.")
 
     def imu_callback(self, msg: Imu):
         now = self.get_clock().now().nanoseconds * 1e-9
@@ -50,36 +68,68 @@ class ImuOdometryNode(Node):
         dt = now - self.last_time
         self.last_time = now
 
-        # --- 姿勢計算 ---
-        ax = msg.linear_acceleration.x
-        ay = msg.linear_acceleration.y
-        az = msg.linear_acceleration.z
+        # --- 1. 軸の入れ替え (Sensor Frame -> Robot Frame) ---
+        # 設定: Sensor X=下, Y=後, Z=左
+        # 目標: Robot  X=前, Y=左, Z=上
+        
+        # 加速度
+        ax = -msg.linear_acceleration.y  # 前 = -(後)
+        ay =  msg.linear_acceleration.z  # 左 = 左
+        az = -msg.linear_acceleration.x  # 上 = -(下)
 
-        # Roll, Pitch: 重力ベクトルから計算
-        self.roll = math.atan2(ay, az)
-        self.pitch = math.atan2(-ax, math.sqrt(ay**2 + az**2))
+        # 角速度 (右ねじの法則に従い軸同様に変換)
+        gx = -msg.angular_velocity.y
+        gy =  msg.angular_velocity.z
+        gz = -msg.angular_velocity.x
 
-        # Yaw: ジャイロ積分
-        self.yaw += msg.angular_velocity.x * dt  # X軸回転が地面水平回転と仮定
+        # --- 2. 姿勢計算 (相補フィルター) ---
+        # 加速度からロール・ピッチを算出 (静止・等速時用)
+        acc_pitch = math.atan2(-ax, math.sqrt(ay**2 + az**2))
+        acc_roll  = math.atan2(ay, az)
 
-        # --- 速度・位置計算 (YZ平面) ---
-        self.vel_y += ay * dt
-        self.vel_z += az * dt
+        # ジャイロ積分と合成
+        self.roll  = self.ALPHA * (self.roll  + gx * dt) + (1.0 - self.ALPHA) * acc_roll
+        self.pitch = self.ALPHA * (self.pitch + gy * dt) + (1.0 - self.ALPHA) * acc_pitch
+        self.yaw   += gz * dt
 
-        self.pos_y += self.vel_y * dt
-        self.pos_z += self.vel_z * dt
+        # 現在の姿勢クォータニオン
+        q_orientation = quaternion_from_euler(self.roll, self.pitch, self.yaw)
 
-        # Odometry メッセージ作成
+        # --- 3. 座標変換と重力除去 ---
+        # ロボット座標系の加速度ベクトル
+        acc_robot = np.array([ax, ay, az])
+        
+        # 世界座標系へ回転 (World Frame Acceleration)
+        acc_world = rotate_vector(acc_robot, q_orientation)
+
+        # 重力加速度 (World Z軸) を除去
+        acc_world[2] -= self.GRAVITY
+
+        # ノイズ対策 (微小な値は0にするデッドゾーン)
+        if abs(acc_world[0]) < 0.05: acc_world[0] = 0.0
+        if abs(acc_world[1]) < 0.05: acc_world[1] = 0.0
+        if abs(acc_world[2]) < 0.05: acc_world[2] = 0.0
+
+        # --- 4. 速度・位置計算 (積分) ---
+        self.vel += acc_world * dt
+        self.pos += self.vel * dt
+
+        # --- 5. Odometry メッセージ作成 ---
         odom = Odometry()
         odom.header.stamp = msg.header.stamp
         odom.header.frame_id = "odom"
         odom.child_frame_id = "base_link"
 
-        odom.pose.pose.position = Point(x=0.0, y=self.pos_y, z=self.pos_z)
-        odom.pose.pose.orientation = quaternion_from_euler(self.roll, self.pitch, self.yaw)
+        # 位置
+        odom.pose.pose.position = Point(x=self.pos[0], y=self.pos[1], z=self.pos[2])
+        # 姿勢
+        odom.pose.pose.orientation = q_orientation
 
-        odom.twist.twist.linear.y = self.vel_y
-        odom.twist.twist.linear.z = self.vel_z
+        # 速度 (Twistは通常BaseLink座標系だが、OdomとしてWorld速度を入れる場合もある。
+        # ここでは計算したWorld速度を入れています)
+        odom.twist.twist.linear.x = self.vel[0]
+        odom.twist.twist.linear.y = self.vel[1]
+        odom.twist.twist.linear.z = self.vel[2]
 
         self.pub_odom.publish(odom)
 
