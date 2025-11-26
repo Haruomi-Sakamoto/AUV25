@@ -26,6 +26,7 @@ cd ~/colon_ws<br>
 rm -rf install build log<br>
 unset AMENT_PREFIX_PATH<br>
 unset CMAKE_PREFIX_PATH<br>
+unset COLCON_CURRENT_PREFIX<br>
 source /opt/ros/jazzy/setup.bash<br>
 colcon build --symlink-install<br>
 source install/setup.bash<br>
