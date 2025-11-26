@@ -15,7 +15,8 @@ ros2 launch auv25_ros auv25_launch.py<br>
 remote pc:<br>
 <br>
 cd ~/colon_ws<br>
-colcon build<br>
+rm -rf build install log<br>
+colcon build --symlink-install<br>
 source install/setup.bash<br>
 ros2 launch auv25_ros auv25_remotelaunch.py<br>
 <br>
