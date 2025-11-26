@@ -1,38 +1,22 @@
 #!/usr/bin/env python3
+import os
+os.environ["OPENCV_LOG_LEVEL"] = "SILENT"
+
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, Joy
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 from cv_bridge import CvBridge
 import cv2
-
+import time
 
 class USBCameraNode(Node):
     def __init__(self):
         super().__init__('campub_node')
 
+        # Camera retry
         self.connected = False
         self.cap = None
-
-        # QoS (Sensor用)
-        self.qos = QoSProfile(
-            reliability=QoSReliabilityPolicy.BEST_EFFORT,
-            history=QoSHistoryPolicy.KEEP_LAST,
-            depth=1
-        )
-
-        self.bridge = CvBridge()
-        self.pub = self.create_publisher(Image, '/camera/image_raw', self.qos)
-
-        # 1秒ごとリトライ
-        self.retry_timer = self.create_timer(1.0, self.try_connect)
-
-        self.get_logger().info("Waiting for camera connection...")
-
-
-    def try_connect(self):
-        if self.connected:
-            return  # 既に接続済みなら何もしない
 
         pipeline = (
             "v4l2src device=/dev/video0 ! "
@@ -40,27 +24,58 @@ class USBCameraNode(Node):
             "jpegdec ! videoconvert ! video/x-raw,format=BGR ! appsink"
         )
 
-        self.cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+        self.pipeline = pipeline
+        self.retry_timer = self.create_timer(1.0, self.try_connect)
 
+        # QoS
+        qos = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+        self.bridge = CvBridge()
+        self.pub = self.create_publisher(Image, "/camera/image_raw", qos)
+
+        # Joy subscribe
+        self.joy_sub = self.create_subscription(Joy, "/joy", self.joy_callback, 10)
+        self.last_button_state = 0  # for edge detection
+
+        self.get_logger().info("Waiting for camera connection...")
+
+    def try_connect(self):
+        if self.connected:
+            return
+        self.cap = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
         if self.cap.isOpened():
             self.connected = True
-            self.retry_timer.cancel()  # リトライ終了
-            self.get_logger().info("📷 Camera connected (/dev/video0) — start publishing")
+            self.retry_timer.cancel()
+            self.get_logger().info("📷 Camera connected — ready to capture via Joy")
 
-            # Publish開始 (10Hz)
-            self.timer = self.create_timer(0.1, self.timer_callback)
-        else:
-            # retry時はログを出さない
-            pass
+    def joy_callback(self, msg: Joy):
+        button = msg.buttons[9a]  # Aボタン等、ボタン0をトリガー
+        if button == 1 and self.last_button_state == 0:  # rising edge
+            self.capture_frame()
+        self.last_button_state = button
 
+    def capture_frame(self):
+        if not self.connected:
+            self.get_logger().warn("Camera not connected yet")
+            return
 
-    def timer_callback(self):
         ok, frame = self.cap.read()
         if not ok:
-            return  # 読み取り失敗時は静かにスキップ
+            self.get_logger().warn("Failed to capture frame")
+            return
 
+        # publish 1 frame
         msg = self.bridge.cv2_to_imgmsg(frame, encoding="bgr8")
         self.pub.publish(msg)
+
+        # save file too
+        filename = f"/home/haruomi/Pictures/capture_{int(time.time())}.jpg"
+        cv2.imwrite(filename, frame)
+
+        self.get_logger().info(f"📸 Captured & saved: {filename}")
 
 
 def main(args=None):
@@ -71,7 +86,7 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        if node.cap is not None:
+        if node.cap:
             node.cap.release()
         node.destroy_node()
         rclpy.shutdown()
