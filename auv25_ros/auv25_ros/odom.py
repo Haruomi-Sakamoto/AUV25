@@ -56,7 +56,9 @@ class ImuOdometryNode(Node):
 
         # パラメータ
         self.GRAVITY = 9.81
-        self.ALPHA = 0.98  # 相補フィルター係数
+        self.ALPHA = 0.98       # 相補フィルター係数
+        self.DEAD_ZONE = 0.05   # 加速度ノイズ除去閾値 (m/s^2)
+        self.VELOCITY_THRESHOLD = 0.1 # 簡易ZUPT用速度閾値 (m/s)
 
         self.get_logger().info("IMU Odometry Node (Corrected Axes) started.")
 
@@ -83,35 +85,44 @@ class ImuOdometryNode(Node):
         gz = -msg.angular_velocity.x
 
         # --- 2. 姿勢計算 (相補フィルター) ---
-        # 加速度からロール・ピッチを算出 (静止・等速時用)
         acc_pitch = math.atan2(-ax, math.sqrt(ay**2 + az**2))
         acc_roll  = math.atan2(ay, az)
 
-        # ジャイロ積分と合成
         self.roll  = self.ALPHA * (self.roll  + gx * dt) + (1.0 - self.ALPHA) * acc_roll
         self.pitch = self.ALPHA * (self.pitch + gy * dt) + (1.0 - self.ALPHA) * acc_pitch
         self.yaw   += gz * dt
 
         # 現在の姿勢クォータニオン
         q_orientation = quaternion_from_euler(self.roll, self.pitch, self.yaw)
+        
+        # クォータニオンの正規化 (Normalization)
+        q_norm = math.sqrt(q_orientation.w**2 + q_orientation.x**2 + q_orientation.y**2 + q_orientation.z**2)
+        if q_norm > 1e-6:
+             q_orientation.w /= q_norm
+             q_orientation.x /= q_norm
+             q_orientation.y /= q_norm
+             q_orientation.z /= q_norm
+
 
         # --- 3. 座標変換と重力除去 ---
-        # ロボット座標系の加速度ベクトル
         acc_robot = np.array([ax, ay, az])
-        
-        # 世界座標系へ回転 (World Frame Acceleration)
         acc_world = rotate_vector(acc_robot, q_orientation)
 
         # 重力加速度 (World Z軸) を除去
         acc_world[2] -= self.GRAVITY
 
         # ノイズ対策 (微小な値は0にするデッドゾーン)
-        if abs(acc_world[0]) < 0.05: acc_world[0] = 0.0
-        if abs(acc_world[1]) < 0.05: acc_world[1] = 0.0
-        if abs(acc_world[2]) < 0.05: acc_world[2] = 0.0
+        if abs(acc_world[0]) < self.DEAD_ZONE: acc_world[0] = 0.0
+        if abs(acc_world[1]) < self.DEAD_ZONE: acc_world[1] = 0.0
+        if abs(acc_world[2]) < self.DEAD_ZONE: acc_world[2] = 0.0
 
-        # --- 4. 速度・位置計算 (積分) ---
+        # --- 4. 速度・位置計算 (積分と簡易ZUPT) ---
         self.vel += acc_world * dt
+        
+        # 簡易ZUPT: 加速度が小さく速度も小さい場合、速度を強制的にゼロにする
+        if np.linalg.norm(acc_world) < 0.1 and np.linalg.norm(self.vel) < self.VELOCITY_THRESHOLD:
+            self.vel = np.array([0.0, 0.0, 0.0]) 
+
         self.pos += self.vel * dt
 
         # --- 5. Odometry メッセージ作成 ---
@@ -124,9 +135,18 @@ class ImuOdometryNode(Node):
         odom.pose.pose.position = Point(x=self.pos[0], y=self.pos[1], z=self.pos[2])
         # 姿勢
         odom.pose.pose.orientation = q_orientation
+        
+        # 共分散の設定 (上位システムに信頼度を伝える)
+        odom.pose.covariance = [
+            1e-1, 0.0, 0.0, 0.0, 0.0, 0.0,  # x (位置の信頼度は低い)
+            0.0, 1e-1, 0.0, 0.0, 0.0, 0.0,  # y
+            0.0, 0.0, 1e-1, 0.0, 0.0, 0.0,  # z
+            0.0, 0.0, 0.0, 1e-3, 0.0, 0.0,  # roll (姿勢は比較的信頼できる)
+            0.0, 0.0, 0.0, 0.0, 1e-3, 0.0,  # pitch
+            0.0, 0.0, 0.0, 0.0, 0.0, 1e-2,  # yaw (ドリフトするため位置よりは悪い)
+        ]
 
-        # 速度 (Twistは通常BaseLink座標系だが、OdomとしてWorld速度を入れる場合もある。
-        # ここでは計算したWorld速度を入れています)
+        # 速度
         odom.twist.twist.linear.x = self.vel[0]
         odom.twist.twist.linear.y = self.vel[1]
         odom.twist.twist.linear.z = self.vel[2]

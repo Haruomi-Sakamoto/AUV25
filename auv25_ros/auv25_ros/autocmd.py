@@ -10,7 +10,7 @@ class AutoCmdVelPublisher(Node):
         super().__init__('auto_cmd_vel_publisher')
 
         self.publisher = self.create_publisher(Twist, '/auto_cmd_vel', 10)
-        self.start_pub = self.create_publisher(Bool, '/auto_cmd_start', 10)  # ★追加
+        self.start_pub = self.create_publisher(Bool, '/auto_cmd_start', 10)
 
         self.commands = [
             (0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 5),

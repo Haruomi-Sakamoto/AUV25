@@ -28,6 +28,9 @@ setup(
             'serrecv = auv25_ros.serrecv:main',
             'campub = auv25_ros.campub:main',
             'camsub = auv25_ros.camsub:main',
+            'amslc = auv25_ros.amslc:main',
+            'logger = auv25_ros.logger:main',
+            'autocmd = auv25_ros.autocmd:main', 
         ],
     },
 )

@@ -3,6 +3,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Joy
+from std_msgs.msg import Bool  # 追加
 
 class CmdVelSelector(Node):
     def __init__(self):
@@ -17,6 +18,8 @@ class CmdVelSelector(Node):
 
         # Publisher to thruster controller
         self.pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        # AUTO開始用Publisher
+        self.auto_start_pub = self.create_publisher(Bool, '/auto_cmd_start', 10)
 
         self.last_auto = Twist()
         self.last_manual = Twist()
@@ -43,7 +46,7 @@ class CmdVelSelector(Node):
             self.mode = "auto"
             self.get_logger().info("Mode switched to AUTO")
             self.publish_current()
-
+            # AUTO開始を通知
             self.auto_start_pub.publish(Bool(data=True))
 
         # 今回のボタン状態を次回比較用に保存
