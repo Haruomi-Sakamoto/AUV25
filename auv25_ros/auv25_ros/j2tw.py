@@ -11,7 +11,7 @@ class JoyToTwistNode(Node):
         self.config = TwistConfig()
 
         self.joy_subscriber = self.create_subscription(Joy, '/remote_pc/joy', self.joy_callback, 10)
-        self.twist_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.twist_publisher = self.create_publisher(Twist, '/cmd_vel_manual', 10)
 
         self.axes = []
         self.buttons = []

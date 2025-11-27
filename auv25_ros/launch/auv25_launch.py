@@ -23,14 +23,6 @@ def generate_launch_description():
         output='log',
     )
 
-    j2tw = Node(
-        package=package_name,
-        executable='j2tw',
-        name='j2tw_node',
-        namespace='auv25',
-        output='log',
-    )
-
     serrecv = Node(
         package=package_name,
         executable='serrecv',

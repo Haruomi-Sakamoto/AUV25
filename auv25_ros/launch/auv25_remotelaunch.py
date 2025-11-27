@@ -17,7 +17,40 @@ def generate_launch_description():
         output='screen'
     )
 
+    autocmd = Node(
+        package='auv25_ros',
+        executable='autocmd',
+        name='autocmd_node',
+        output='screen'
+    )
+
+    j2tw = Node(
+        package='auv25_ros',
+        executable='j2tw',
+        name='j2tw_node',
+        namespace='auv25',
+        output='log',
+    )
+
+    amslc = Node(
+        package='auv25_ros',
+        executable='amslc',
+        name='amslc_node',
+        output='screen'
+    )
+
+    logger = Node(
+        package='auv25_ros',
+        executable='logger',
+        name='logger_node',
+        output='screen'
+    )
+
     return LaunchDescription([
         gamepad,
         camsub,
+        autocmd,
+        j2tw,
+        amslc,
+        logger,
     ])
