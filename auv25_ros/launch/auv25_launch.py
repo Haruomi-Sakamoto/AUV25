@@ -59,7 +59,6 @@ def generate_launch_description():
     return LaunchDescription([
         mpu6050,
         odom,
-        j2tw,
         serrecv,
         thctrl,
         pwmgen,
